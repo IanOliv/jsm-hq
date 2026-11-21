@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ActionItem } from "../../data/types";
 import { officeActions, selectAttention, useOffice } from "../../store/office";
 import { ui } from "../../store/ui";
@@ -57,9 +57,10 @@ export function ActionItemsDrawer() {
                   onOpen={() => ui.openAgent(b.agentId)}
                 />
               ))}
+              {a.blocked.length > 0 && <AllowAllBlocked agentIds={a.blocked.map((b) => b.agentId)} />}
               {a.readyPrs.map((p) =>
                 p.url ? (
-                  <li key={`pr-${p.number}`} className="flex items-center gap-2 border-[3px] border-ink bg-white px-2.5 py-1.5">
+                  <li key={`pr-${p.number}`} className="flex items-center gap-2 border-[3px] border-line bg-paper px-2.5 py-1.5">
                     <span className="flex-1">
                       PR <b>#{p.number}</b> {p.title} passed review and is ready to merge
                     </span>
@@ -98,9 +99,40 @@ export function ActionItemsDrawer() {
   );
 }
 
+/** Allow every site every agent's sandbox blocked, after one confirm that lists them (issue #40). */
+function AllowAllBlocked({ agentIds }: { agentIds: string[] }) {
+  const snap = useOffice((s) => s.snap);
+  // Disabled from a click until HQ sends the updated lists (or 15 s, in case sbx refused).
+  const [busy, setBusy] = useState(false);
+  const listKey = agentIds.map((id) => `${id}:${snap?.sbx.agents[id]?.approvals.map((x) => x.id).join(",")}`).join("|");
+  useEffect(() => setBusy(false), [listKey]);
+  if (!snap) return null;
+  const perAgent = agentIds.map((id) => ({
+    id,
+    name: snap.config.team.find((x) => x.id === id)?.name ?? id,
+    hosts: [...new Set((snap.sbx.agents[id]?.approvals ?? []).map((x) => x.title ?? x.host))],
+  }));
+  const total = perAgent.reduce((n, x) => n + x.hosts.length, 0);
+  const allow = () => {
+    const lines = perAgent.map((x) => `${x.name}: ${x.hosts.slice(0, 8).join(", ")}${x.hosts.length > 8 ? ` …and ${x.hosts.length - 8} more` : ""}`);
+    const who = perAgent.length === 1 ? `${perAgent[0].name}'s sandbox` : `${perAgent.length} agents' sandboxes`;
+    if (!window.confirm(`Allow all ${total} blocked site${total === 1 ? "" : "s"} for ${who}?\n\n${lines.join("\n")}\n\nEach site is allowed only for the agent it was blocked for. Only allow sites you trust. You can remove them later in Settings → Sandbox.`)) return;
+    setBusy(true);
+    for (const x of perAgent) officeActions.answerApproval(x.id, "all", "allow");
+    window.setTimeout(() => setBusy(false), 15_000);
+  };
+  return (
+    <li className="flex justify-end">
+      <button className="btn px-2 text-[12px] disabled:opacity-50" disabled={busy} onClick={allow}>
+        Allow all blocked sites{perAgent.length > 1 ? ` · ${perAgent.length} agents` : ""}
+      </button>
+    </li>
+  );
+}
+
 function Row({ text, color, onOpen }: { text: string; color?: string; onOpen: () => void }) {
   return (
-    <li className="flex items-center gap-2 border-[3px] border-ink bg-white px-2.5 py-1.5">
+    <li className="flex items-center gap-2 border-[3px] border-line bg-paper px-2.5 py-1.5">
       {color && <Dot color={color} size={8} />}
       <span className="flex-1">{text}</span>
       <button className="btn px-2 text-[12px]" onClick={onOpen}>
@@ -115,7 +147,7 @@ function Item({ item, from, now }: { item: ActionItem; from?: { id: string; name
   const [expanded, setExpanded] = useState(false);
   const long = item.details.split("\n").length > 6 || item.details.length > 400;
   return (
-    <li className={`border-[3px] border-ink bg-white px-3 py-2 shadow-[0_3px_0_rgba(36,26,46,0.35)] ${item.waiting ? "outline outline-[3px] outline-orange" : ""}`}>
+    <li className={`border-[3px] border-line bg-paper px-3 py-2 shadow-[0_3px_0_rgba(36,26,46,0.35)] ${item.waiting ? "outline outline-[3px] outline-orange" : ""}`}>
       <div className="flex items-start gap-2">
         <b className="flex-1 text-[15px]">{item.title}</b>
         {item.waiting && <span className="chip shrink-0 text-[11px]" style={{ background: "#fff1d6" }}>waiting</span>}
