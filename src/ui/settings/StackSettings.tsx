@@ -75,7 +75,7 @@ function Detect({ stack, save }: { stack: StackConfig; save: (s: StackConfig) =>
   const [asked, setAsked] = useState(false);
   const adds = found ? stackAdditions(stack, found) : [];
   return (
-    <section className="flex flex-wrap items-center gap-2 border-[3px] border-ink bg-white px-3 py-2 text-[13px]">
+    <section className="flex flex-wrap items-center gap-2 border-[3px] border-line bg-paper px-3 py-2 text-[13px]">
       <button
         className="btn px-2 text-[13px]"
         onClick={() => {
