@@ -250,17 +250,27 @@ export class Sessions {
   async restart(id: string) {
     const hub = this.hub;
     const agent = hub.cfg(id);
-    if (!agent || hub.status(id)?.session.state !== "running") return;
-    this.onSessionDown(id);
-    this.detach(id);
-    await this.backend.kill(this.name(id));
-    // Switched to Local mode since it started: don't leave its old sandbox running.
-    if (agent.mode === "local") void run("sbx", ["stop", this.name(id)], { timeoutMs: 30_000 });
-    hub.setSession(id, { state: "stopped", detail: null });
+    if (!agent || hub.status(id)?.session.state !== "running" || this.restarting.has(id)) return;
+    // Mark it right away, before anything async: a second click (or Stop) can't overlap this one,
+    // since Restart only shows while running and Stop is disabled while starting.
+    this.restarting.add(id);
+    hub.setSession(id, { state: "starting", detail: "Restarting…" });
     hub.setStatus(id, { state: "idle", note: "Restarting" });
     hub.activity("session", id, `Restarting ${agent.name}`);
-    await this.start(id);
+    try {
+      this.onSessionDown(id);
+      this.detach(id);
+      await this.backend.kill(this.name(id));
+      // Switched to Local mode since it started: don't leave its old sandbox running.
+      if (agent.mode === "local") void run("sbx", ["stop", this.name(id)], { timeoutMs: 30_000 });
+      hub.setSession(id, { state: "stopped", detail: null });
+      await this.start(id);
+    } finally {
+      this.restarting.delete(id);
+    }
   }
+
+  private restarting = new Set<string>();
 
   async recreate(id: string) {
     const agent = this.hub.cfg(id);

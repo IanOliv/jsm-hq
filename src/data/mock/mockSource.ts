@@ -179,14 +179,12 @@ export function createMockSource(): OfficeDataSource {
     restartAgent(id) {
       const st = world.status(id);
       if (!st || st.session.state !== "running") return;
-      sim.stopAgent(id);
-      world.setStatus(id, { state: "idle", note: "Restarting", session: { ...st.session, state: "starting", detail: "Restarting…" } });
+      // The demo's simulated work keeps going: stopping it here would strand the agent's task.
+      world.setStatus(id, { session: { ...st.session, state: "starting", detail: "Restarting…" } });
       world.activity("session", id, `Restarting ${world.name(id)}`);
       world.after(1.5, () => {
         const now = world.status(id);
-        if (!now) return;
-        world.setStatus(id, { note: null, session: { ...now.session, state: "running", detail: null } });
-        if (!world.cfg(id)?.isLead) sim.startWorker(id, 1.5);
+        if (now) world.setStatus(id, { session: { ...now.session, state: "running", detail: null } });
       });
     },
 
