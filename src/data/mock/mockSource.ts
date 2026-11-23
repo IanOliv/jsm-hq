@@ -176,6 +176,18 @@ export function createMockSource(): OfficeDataSource {
       world.activity("session", id, `${world.name(id)}'s session stopped`);
     },
 
+    restartAgent(id) {
+      const st = world.status(id);
+      if (!st || st.session.state !== "running") return;
+      // The demo's simulated work keeps going: stopping it here would strand the agent's task.
+      world.setStatus(id, { session: { ...st.session, state: "starting", detail: "Restarting…" } });
+      world.activity("session", id, `Restarting ${world.name(id)}`);
+      world.after(1.5, () => {
+        const now = world.status(id);
+        if (now) world.setStatus(id, { session: { ...now.session, state: "running", detail: null } });
+      });
+    },
+
     recreateSandbox(id) {
       const st = world.status(id);
       const r = world.cfg(id)?.sandbox.resources;
