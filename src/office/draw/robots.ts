@@ -1,17 +1,16 @@
-// Hover-robot sprites, recoloured per agent. The lead wears a crown.
+// Agent sprites: small original-style humans (head, hair, shirt, trousers), recoloured per
+// agent. The shirt is the agent colour; the lead wears a gold crown. The pixel data lives in
+// humanData.ts (see docs/habbo-sprite-assets.md for where it comes from and its licence status).
 
 import type { Texture } from "pixi.js";
-import { shade } from "../../theme/tokens";
 import { C } from "../engine/palette";
-import { flipCanvas, spriteCanvas } from "../engine/pen";
+import { flipCanvas, makeCanvas, spriteCanvas } from "../engine/pen";
 import { canvasTexture } from "../engine/textures";
+import { HUMAN, HUMAN_H, HUMAN_W, type PassKind } from "./humanData";
 
-const HEAD_ANTENNA = [".....kk.....", "....k..k....", ".....kk....."];
-const HEAD_CROWN = ["..k..kk..k..", "..kGkGGkGk..", "..kGGGGGGk.."];
-const BODY_FRONT = ["..kkkkkkkk..", ".khhBBBBBBk.", ".khVVVVVVBk.", ".kBVVVVVVBk.", ".kBVVVVVVBk.", ".kbBBBBBBbk.", "..kkkkkkkk..", "...kBBBBk...", ".kbkBBBBkbk.", ".kk.kbbk.kk.", ".....kk....."];
-const BODY_BACK = ["..kkkkkkkk..", ".khhBBBBBBk.", ".kBBBBBBBBk.", ".kBBkbbkBBk.", ".kBBBBBBBBk.", ".kbBBBBBBbk.", "..kkkkkkkk..", "...kBBBBk...", ".kbkBBBBkbk.", ".kk.kbbk.kk.", ".....kk....."];
-const BODY_TYPE = ["..kkkkkkkk..", ".khhBBBBBBk.", ".kBBBBBBBBk.", ".kBBkbbkBBk.", ".kBBBBBBBBk.", ".kbBBBBBBbk.", "..kkkkkkkk..", ".kbkBBBBkbk.", ".kkkBBBBkkk.", "....kbbk....", ".....kk....."];
-const BODY_SIDE = ["..kkkkkkkk..", ".khhBBBBBBk.", ".kBBBBBVVVk.", ".kBBBBBVVVk.", ".kBBBBBVVVk.", ".kbBBBBBBbk.", "..kkkkkkkk..", "...kBBBBk...", "...kbBBBbk..", "....kbbkk...", ".....kk....."];
+const CROWN = [".G.G.G.G.", ".GGGGGGG.", ".GkGkGkG."];
+const FIXED: Record<Exclude<PassKind, "shirt">, string> = { skin: "#f1c9a0", hair: "#b9824a", pants: "#2b3050", eyes: "#ffffff" };
+const LEVELS = [0.5, 0.72, 0.88, 1];
 
 export type Facing = "front" | "back" | "type" | "side" | "sideL";
 
@@ -23,18 +22,36 @@ export interface RobotSprites {
 const canvasCache = new Map<string, Record<Facing, HTMLCanvasElement>>();
 const spriteCache = new Map<string, RobotSprites>();
 
+function mul(hex: string, f: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const ch = (v: number) => Math.round(Math.min(255, v * f)).toString(16).padStart(2, "0");
+  return `#${ch((n >> 16) & 255)}${ch((n >> 8) & 255)}${ch(n & 255)}`;
+}
+
+function build(face: keyof typeof HUMAN, color: string, lead: boolean): HTMLCanvasElement {
+  const out = makeCanvas(HUMAN_W, HUMAN_H);
+  const g = out.getContext("2d");
+  if (!g) return out;
+  for (const [kind, rows] of HUMAN[face]) {
+    const base = kind === "shirt" ? color : FIXED[kind];
+    const pal: Record<string, string> = { k: C.ink };
+    LEVELS.forEach((f, i) => (pal["abcd"[i]] = kind === "eyes" ? (i < 2 ? C.ink : base) : mul(base, f)));
+    g.drawImage(spriteCanvas(rows, pal), 0, 0);
+  }
+  if (lead) g.drawImage(spriteCanvas(CROWN, { k: C.ink, G: C.gold }), 2, 0);
+  return out;
+}
+
 /** Plain canvases for each facing (no Pixi) — also used by HUD portraits. */
 export function robotCanvases(color: string, lead: boolean): Record<Facing, HTMLCanvasElement> {
   const key = `${color}|${lead}`;
   const hit = canvasCache.get(key);
   if (hit) return hit;
-  const pal = { k: C.ink, B: color, b: shade(color, -0.3), h: shade(color, 0.6), V: "#16213f", G: C.gold };
-  const head = lead ? HEAD_CROWN : HEAD_ANTENNA;
-  const side = spriteCanvas([...head, ...BODY_SIDE], pal);
+  const side = build("side", color, lead);
   const canvases: Record<Facing, HTMLCanvasElement> = {
-    front: spriteCanvas([...head, ...BODY_FRONT], pal),
-    back: spriteCanvas([...head, ...BODY_BACK], pal),
-    type: spriteCanvas([...head, ...BODY_TYPE], pal),
+    front: build("front", color, lead),
+    back: build("back", color, lead),
+    type: build("type", color, lead),
     side,
     sideL: flipCanvas(side),
   };
