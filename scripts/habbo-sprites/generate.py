@@ -26,55 +26,59 @@ def lib(p):
         d=json.load(open(CACHE/f'{p}.json'))
         LIB[p]=(d['assets'],d['spritesheet']['frames'],Image.open(CACHE/f'{p}.png').convert('RGBA'))
     return LIB[p]
-def tint(im,c):
-    r,g,b=[int(c[i:i+2],16) for i in (1,3,5)]
-    px=im.load()
-    out=im.copy(); o=out.load()
-    for y in range(im.height):
-        for x in range(im.width):
-            R,G,B,A=px[x,y]
-            if A: o[x,y]=(R*r//255,G*g//255,B*b//255,A)
-    return out
-def part(libname,name,anchor,canvas,color=None,flip=False):
-    assets,frames,sheet=lib(libname)
-    a=assets.get(name)
-    if a is None: return False
-    src=a.get('source',name); fl=a.get('flipH',False)
-    f=frames.get(f'hh_human_{libname}_{src}')
-    if f is None: return False
-    fr=f['frame']; ss=f['spriteSourceSize']
-    im=sheet.crop((fr['x'],fr['y'],fr['x']+fr['w'],fr['y']+fr['h']))
-    if color: im=tint(im,color)
-    ox=a['x']; 
-    if fl: im=im.transpose(Image.FLIP_LEFT_RIGHT)
-    # place: top-left of source = anchor - offset ; trimmed shift
-    if fl: x=anchor[0]+ox-ss['x']-fr['w']  ; 
-    else: x=anchor[0]-ox+ss['x']
-    y=anchor[1]-a['y']+ss['y']
-    canvas.alpha_composite(im,(int(x),int(y)))
-    return True
-ORDER=['hrb','bd','lg','lh','ch','cc','lc','ls','hd','fc','ey','hr','rh','rs','rc']
-def figure(d,skin='#F3C9A0',shirt='#3b7de0',pants='#2a2f4a',hair='#5a3a1e',hid=1,act='std',fr=0,mirror=False):
-    cv=Image.new('RGBA',(96,128),(0,0,0,0)); anchor=(48,100)
-    spec={'hrb':('hair',hair,hid),'hr':('hair',hair,hid),'lg':('leg',pants,1),'bd':('body',skin,1),'lh':('body',skin,1),'rh':('body',skin,1),'hd':('body',skin,1),'fc':('face',skin,1),'ey':('face',None,1),'ch':('shirt',shirt,1),'cc':('shirt',shirt,800),'lc':('shirt',shirt,800),'rc':('shirt',shirt,800),'ls':('shirt',shirt,1),'rs':('shirt',shirt,1)}
-    for p in ORDER:
-        L,c,i=spec[p]
-        part(L,f'h_{act}_{p}_{i}_{d}_{fr}',anchor,cv,c)
-    return cv
+class MissingPart(Exception):
+    pass
 
-# --- generate ---
+
+def part(libname, name, anchor, canvas):
+    """Composites one part sprite onto canvas; raises MissingPart if the library lacks it."""
+    assets, frames, sheet = lib(libname)
+    a = assets.get(name)
+    if a is None:
+        raise MissingPart(f"{libname}: no asset {name}")
+    src = a.get('source', name)
+    fl = a.get('flipH', False)
+    f = frames.get(f'hh_human_{libname}_{src}')
+    if f is None:
+        raise MissingPart(f"{libname}: no frame for {src}")
+    fr = f['frame']
+    ss = f['spriteSourceSize']
+    im = sheet.crop((fr['x'], fr['y'], fr['x'] + fr['w'], fr['y'] + fr['h']))
+    ox = a['x']
+    if fl:
+        im = im.transpose(Image.FLIP_LEFT_RIGHT)
+    # place: top-left of source = anchor - offset ; trimmed shift
+    if fl:
+        x = anchor[0] + ox - ss['x'] - fr['w']
+    else:
+        x = anchor[0] - ox + ss['x']
+    y = anchor[1] - a['y'] + ss['y']
+    canvas.alpha_composite(im, (int(x), int(y)))
+
+
 BOX=(65,26,96,104); H=48; W=19; CW=20
+
 # (pass kind, parts[(lib,part,id)])
 PASSES=[('hair',[('hair','hrb',8)]),('skin',[('body','bd',1)]),('pants',[('leg','lg',1)]),('skin',[('body','lh',1)]),
         ('shirt',[('shirt','ch',2),('shirt','ls',2)]),('skin',[('body','hd',1),('face','fc',1)]),('eyes',[('face','ey',1)]),
         ('hair',[('hair','hr',8)]),('skin',[('body','rh',1)]),('shirt',[('shirt','rs',2)])]
 ARMS={'lh','rh','ls','rs'}
-def layer(d,parts):
-    cv=Image.new('RGBA',(96,128),(0,0,0,0))
-    for L,p,i in parts:
-        ok=part(L,f'h_std_{p}_{i}_{d}_0',(48,100),cv,None)
-        if not ok and p in('ls','rs'): part(L,f'h_std_{p}_1_{d}_0',(48,100),cv,None)
+
+# Nobody has a face seen from behind (direction 7): these two are the only parts allowed to be absent.
+ABSENT_OK = {('fc', 7), ('ey', 7)}
+
+
+def layer(d, parts):
+    cv = Image.new('RGBA', (96, 128), (0, 0, 0, 0))
+    for L, p, i in parts:
+        try:
+            part(L, f'h_std_{p}_{i}_{d}_0', (48, 100), cv)
+        except MissingPart as e:
+            if (p, d) not in ABSENT_OK:
+                raise SystemExit(f"generate.py: missing part (direction {d}): {e}")
     return cv.crop(BOX)
+
+
 def rows(im,dy=0):
     r=im.resize((W,H),Image.BOX); px=r.load(); out=[]
     for y in range(H):
