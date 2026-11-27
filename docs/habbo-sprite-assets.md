@@ -12,3 +12,21 @@ layer, then tinted at runtime (shirt = agent colour).
 belongs to Sulake Corporation Oy. The maintainer approved committing this data; treat it as
 temporary and replace it with original or openly licensed art before any public release.
 The raw sprite sheets are not committed.
+
+## Regenerating `humanData.ts`
+
+The file is generated; do not edit it by hand. Needs Python 3 and Pillow (`pip install pillow`;
+a tool for these scripts only, not a project dependency).
+
+```sh
+python3 scripts/habbo-sprites/fetch.py      # download + unpack the five parts into scripts/habbo-sprites/.cache/
+python3 scripts/habbo-sprites/generate.py   # write src/office/draw/humanData.ts
+git diff --exit-code src/office/draw/humanData.ts   # empty diff = reproducible
+```
+
+- `fetch.py` pins each part by version and checks its SHA-256, so a changed upstream file fails
+  loudly instead of silently changing the sprites. The `.cache/` folder is git-ignored; raw
+  sheets are never committed.
+- `generate.py` composes the standing pose for directions 3 (front), 7 (back) and 1 (side),
+  one pass per tintable layer, downscales to 20 x 48, and quantises to four shade levels.
+- The `side` view faces right; `sideL` is its mirror, made at runtime in `robots.ts`.
