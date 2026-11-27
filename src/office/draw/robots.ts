@@ -1,4 +1,5 @@
-// Hover-robot sprites, recoloured per agent. The lead wears a crown.
+// Human office-worker sprites, recoloured per agent (shirt = agent colour). The lead wears a crown.
+// Original artwork drawn in code; no third-party assets.
 
 import type { Texture } from "pixi.js";
 import { shade } from "../../theme/tokens";
@@ -6,12 +7,20 @@ import { C } from "../engine/palette";
 import { flipCanvas, spriteCanvas } from "../engine/pen";
 import { canvasTexture } from "../engine/textures";
 
-const HEAD_ANTENNA = [".....kk.....", "....k..k....", ".....kk....."];
-const HEAD_CROWN = ["..k..kk..k..", "..kGkGGkGk..", "..kGGGGGGk.."];
-const BODY_FRONT = ["..kkkkkkkk..", ".khhBBBBBBk.", ".khVVVVVVBk.", ".kBVVVVVVBk.", ".kBVVVVVVBk.", ".kbBBBBBBbk.", "..kkkkkkkk..", "...kBBBBk...", ".kbkBBBBkbk.", ".kk.kbbk.kk.", ".....kk....."];
-const BODY_BACK = ["..kkkkkkkk..", ".khhBBBBBBk.", ".kBBBBBBBBk.", ".kBBkbbkBBk.", ".kBBBBBBBBk.", ".kbBBBBBBbk.", "..kkkkkkkk..", "...kBBBBk...", ".kbkBBBBkbk.", ".kk.kbbk.kk.", ".....kk....."];
-const BODY_TYPE = ["..kkkkkkkk..", ".khhBBBBBBk.", ".kBBBBBBBBk.", ".kBBkbbkBBk.", ".kBBBBBBBBk.", ".kbBBBBBBbk.", "..kkkkkkkk..", ".kbkBBBBkbk.", ".kkkBBBBkkk.", "....kbbk....", ".....kk....."];
-const BODY_SIDE = ["..kkkkkkkk..", ".khhBBBBBBk.", ".kBBBBBVVVk.", ".kBBBBBVVVk.", ".kBBBBBVVVk.", ".kbBBBBBBbk.", "..kkkkkkkk..", "...kBBBBk...", "...kbBBBbk..", "....kbbkk...", ".....kk....."];
+// Palette letters: k outline, S/s skin, H/h hair, B/b/L shirt (base/shadow/light), P/p trousers, F shoes, G gold.
+// Every sprite is 12 wide x 14 high. HAT_* replaces the top two rows for the lead.
+const HAT_CROWN = ["..kGk..kGk..", "..kGGGGGGk.."];
+const HAIR_TOP = ["...kkkkkk...", "..kHHHHHHk.."];
+const LEGS = ["..kPPPPPPk..", "..kPPkkPPk..", "..kFFk.kFFk."];
+const HEAD_FRONT = ["..kHhHHHHk..", "..kHSSSSHk..", "..kSkSSkSk..", "...kSSSSk..."];
+const HEAD_BACK = ["..kHHhHHHk..", "..kHHHHHHk..", "..kHHHHHHk..", "...kHHHHk..."];
+const HEAD_SIDE = ["..kHHHHHHk..", "..kHHHHSSk..", "..kHHHSkSk..", "...kHHSSSk.."];
+const BODY_FRONT = ["...kkSSkk...", ".kkLBBBBBkk.", ".kLBBBBBBbk.", "kSSBBBBBBbSk", ".kkbBBBBbkk."];
+const BODY_BACK = ["...kksskk...", ".kkBBBBBBkk.", ".kBBBBBBBbk.", "kSSBBBBBBbSk", ".kkbBBBBbkk."];
+const BODY_TYPE = ["...kksskk...", ".kkBBBBBBkk.", ".kBBBBBBBBk.", ".kSkBBBBkSk.", "..kkBBBBkk.."];
+const BODY_SIDE = ["...kkSSkk...", "..kkLBBBBkk.", "..kLBBBBBBk.", "..kSBBBBBbk.", "..kSSBBBbk.."];
+const LEGS_TYPE = ["..kPPPPPPk..", "...kPPPPk...", "...kFFFFk..."];
+const LEGS_SIDE = ["...kPPPPk...", "...kPPPPk...", "...kFFFFFk.."];
 
 export type Facing = "front" | "back" | "type" | "side" | "sideL";
 
@@ -28,13 +37,14 @@ export function robotCanvases(color: string, lead: boolean): Record<Facing, HTML
   const key = `${color}|${lead}`;
   const hit = canvasCache.get(key);
   if (hit) return hit;
-  const pal = { k: C.ink, B: color, b: shade(color, -0.3), h: shade(color, 0.6), V: "#16213f", G: C.gold };
-  const head = lead ? HEAD_CROWN : HEAD_ANTENNA;
-  const side = spriteCanvas([...head, ...BODY_SIDE], pal);
+  const pal = { k: C.ink, B: color, b: shade(color, -0.3), L: shade(color, 0.3), S: "#f2c29b", s: "#d49a74", H: "#4a3020", h: "#6b4a30", P: "#2f3a5a", p: "#222c46", F: "#f4efe6", G: C.gold };
+  const top = lead ? HAT_CROWN : HAIR_TOP;
+  const build = (head: string[], body: string[], legs: string[]) => spriteCanvas([...top, ...head, ...body, ...legs], pal);
+  const side = build(HEAD_SIDE, BODY_SIDE, LEGS_SIDE);
   const canvases: Record<Facing, HTMLCanvasElement> = {
-    front: spriteCanvas([...head, ...BODY_FRONT], pal),
-    back: spriteCanvas([...head, ...BODY_BACK], pal),
-    type: spriteCanvas([...head, ...BODY_TYPE], pal),
+    front: build(HEAD_FRONT, BODY_FRONT, LEGS),
+    back: build(HEAD_BACK, BODY_BACK, LEGS),
+    type: build(HEAD_BACK, BODY_TYPE, LEGS_TYPE),
     side,
     sideL: flipCanvas(side),
   };
