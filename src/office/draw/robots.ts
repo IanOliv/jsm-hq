@@ -1,4 +1,4 @@
-// Agent sprites: small original-style humans (head, hair, shirt, trousers), recoloured per
+// Agent sprites: small humans (head, hair, shirt, trousers), recoloured per
 // agent. The shirt is the agent colour; the lead wears a gold crown. The pixel data lives in
 // humanData.ts (see docs/habbo-sprite-assets.md for where it comes from and its licence status).
 
