@@ -10,7 +10,7 @@ layer, then tinted at runtime (shirt = agent colour).
 
 **Licence.** None found. The archive states it is not affiliated with Sulake, and the artwork
 belongs to Sulake Corporation Oy. This repository is public and `humanData.ts` is already
-published on every branch that has been pushed. The repository's own licence (MIT) does not
+public on pushed branches of this repository. The repository's own licence (MIT) does not
 cover this data, and the maintainer approving the commit does not grant Sulake's rights. Until
 the data is replaced with original or openly licensed art, treat it as third-party material
 used without permission. The raw sprite sheets are not committed.
@@ -37,5 +37,5 @@ git diff --exit-code src/office/draw/humanData.ts   # empty diff = reproducible
 - The `side` view faces right; `sideL` is its mirror, made at runtime in `robots.ts`.
 - The `type` sprite is not a real pose. The generator makes it from the back view by moving the
   arm layers up 2 rows; a proper typing pose is planned in HC-T06.
-- Crown, shadow and the portrait crop are drawn in code (`robots.ts`, `kit.tsx`), not by the
-  generator.
+- The crown and the portrait crop are drawn in code (`robots.ts`, `kit.tsx`), and the shadow in
+  `overlay.ts`; none of them comes from the generator.

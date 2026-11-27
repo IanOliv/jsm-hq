@@ -4,7 +4,7 @@
 Usage: python3 scripts/habbo-sprites/fetch.py
 Needs only the Python standard library. Raw sheets stay in .cache/ (git-ignored).
 """
-import hashlib, json, struct, sys, urllib.request, zlib
+import hashlib, struct, sys, urllib.request, zlib
 from pathlib import Path
 
 CACHE = Path(__file__).parent / ".cache"
