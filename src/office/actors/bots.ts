@@ -89,8 +89,8 @@ export class Bot {
   render(t: number, state: AgentState) {
     const moving = this.path.length > 0;
     const hover = 3 + (Math.floor(t * (moving ? 6 : 2.5) + this.index) % 2);
-    const x = Math.round(this.x) - 6;
-    const y = Math.round(this.y) - 13 - hover;
+    const x = Math.round(this.x) - 10;
+    const y = Math.round(this.y) - 47 - (hover - 3); // feet on the tile, 1px bob
     let f: Facing = "front";
     if (this.face === "up") f = this.seated && state === "working" && Math.floor(t * 8) % 2 ? "type" : "back";
     else if (this.face === "right") f = "side";

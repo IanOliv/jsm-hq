@@ -23,7 +23,7 @@ export function ReviewChip({ review, merged }: { review: ReviewState; merged?: b
   );
 }
 
-/** Pixel robot portrait drawn from the same sprite as the office. */
+/** Pixel character portrait drawn from the same sprite as the office. */
 export function Portrait({ color, lead, size = 40 }: { color: string; lead: boolean; size?: number }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -32,14 +32,14 @@ export function Portrait({ color, lead, size = 40 }: { color: string; lead: bool
     if (!c || !g) return;
     const src = robotCanvases(color, lead).front;
     g.imageSmoothingEnabled = false;
-    g.clearRect(0, 0, 16, 16);
-    g.drawImage(src, 2, 1);
+    g.clearRect(0, 0, 24, 24);
+    g.drawImage(src, 0, 0, src.width, 24, 2, 0, src.width, 24); // head and shoulders
   }, [color, lead]);
   return (
     <canvas
       ref={ref}
-      width={16}
-      height={16}
+      width={24}
+      height={24}
       className="shrink-0 border-[3px] border-line bg-navy"
       style={{ width: size, height: size, imageRendering: "pixelated" }}
       aria-hidden
