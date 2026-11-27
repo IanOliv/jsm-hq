@@ -8,7 +8,7 @@ import { flipCanvas, makeCanvas, spriteCanvas } from "../engine/pen";
 import { canvasTexture } from "../engine/textures";
 import { HUMAN, HUMAN_H, HUMAN_W, type PassKind } from "./humanData";
 
-const CROWN = [".G.G.G.G.", ".GGGGGGG.", ".GkGkGkG."];
+const CROWN = ["G..G..G..G.", "GG.GG.GG.GG", "GGGGGGGGGGG", "GkGkGkGkGkG", "GGGGGGGGGGG"];
 const FIXED: Record<Exclude<PassKind, "shirt">, string> = { skin: "#f1c9a0", hair: "#b9824a", pants: "#2b3050", eyes: "#ffffff" };
 const LEVELS = [0.5, 0.72, 0.88, 1];
 
@@ -38,7 +38,7 @@ function build(face: keyof typeof HUMAN, color: string, lead: boolean): HTMLCanv
     LEVELS.forEach((f, i) => (pal["abcd"[i]] = kind === "eyes" ? (i < 2 ? C.ink : base) : mul(base, f)));
     g.drawImage(spriteCanvas(rows, pal), 0, 0);
   }
-  if (lead) g.drawImage(spriteCanvas(CROWN, { k: C.ink, G: C.gold }), 2, 0);
+  if (lead) g.drawImage(spriteCanvas(CROWN, { k: C.ink, G: C.gold }), 4, 0);
   return out;
 }
 

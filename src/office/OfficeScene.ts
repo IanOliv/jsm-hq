@@ -139,7 +139,7 @@ export class OfficeScene {
   }
 
   botRect(b: Bot): PxRect {
-    return { x: Math.round(b.x) - 7, y: b.headY - 1, w: 14, h: Math.round(b.y) - b.headY + 3 };
+    return { x: Math.round(b.x) - 10, y: b.headY - 1, w: 20, h: Math.round(b.y) - b.headY + 3 };
   }
 
   /** Screen px the side drawer covers on the right, so focused things land beside it, not under it. */
@@ -305,7 +305,7 @@ export class OfficeScene {
     }
     this.effects.draw(po, (id) => {
       const b = this.bots.get(id);
-      return b ? { x: b.x, y: b.headY + 10 } : null;
+      return b ? { x: b.x, y: b.headY + 20 } : null;
     });
     if (this.hover) drawSelection(po, this.hover.rect, t);
   }
