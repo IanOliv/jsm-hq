@@ -19,7 +19,7 @@ export function drawFace(p: Pen, bot: Bot, state: AgentState, t: number) {
   if (state === "needs-input") col = Math.floor(t * 6) % 2 ? st.color : st.dim;
   else if (state === "working") col = Math.floor(t * 2) % 2 ? st.color : "#9ddcff";
   else if (state === "review-passed") col = C.green;
-  const x = Math.round(bot.x) + 8;
+  const x = Math.round(bot.x) + (bot.face === "left" ? 10 : 8); // facing left, the back of the head is on the right
   const y = bot.headY + 2;
   p.rect(x + 1, y, 3, 5, C.ink);
   p.rect(x, y + 1, 5, 3, C.ink);
