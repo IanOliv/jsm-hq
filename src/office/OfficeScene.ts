@@ -282,7 +282,7 @@ export class OfficeScene {
       live.drawGate(p, l.gate, this.gateMode.mode, t - this.gateMode.at, t, label, tool === "coderabbit");
     }
 
-    // bots: shadows below, faces/emotes/tags above
+    // bots: shadows below, state pips/emotes/tags above
     const sh = this.gShadow;
     sh.clear();
     const ps = new GfxPen(sh);
